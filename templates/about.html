@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GovCh - 关于</title>
+    <!-- 引入Layui CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='layui/css/layui.css') }}">
+</head>
+<body>
+    <!-- 头部导航 -->
+    <div class="layui-header">
+        <div class="layui-logo">GovCh</div>
+        <ul class="layui-nav layui-layout-right">
+            <li class="layui-nav-item"><a href="{{ url_for('main.index') }}">首页</a></li>
+            <li class="layui-nav-item"><a href="{{ url_for('main.about') }}">关于</a></li>
+            <li class="layui-nav-item"><a href="{{ url_for('main.dashboard') }}">仪表盘</a></li>
+            
+            {% if current_user.is_authenticated %}
+                {% if current_user.role.name == 'admin' %}
+                    <li class="layui-nav-item layui-nav-itemed">
+                        <a href="javascript:;">后台管理</a>
+                        <dl class="layui-nav-child">
+                            <dd><a href="{{ url_for('admin.admin_dashboard') }}">管理仪表盘</a></dd>
+                            <dd><a href="{{ url_for('admin.users') }}">用户管理</a></dd>
+                            <dd><a href="{{ url_for('admin.roles') }}">角色管理</a></dd>
+                            <dd><a href="{{ url_for('admin.settings') }}">系统设置</a></dd>
+                        </dl>
+                    </li>
+                {% endif %}
+                
+                <li class="layui-nav-item layui-nav-itemed">
+                    <a href="javascript:;">{{ current_user.username }}</a>
+                    <dl class="layui-nav-child">
+                        <dd><a href="{{ url_for('auth.logout') }}">退出登录</a></dd>
+                    </dl>
+                </li>
+            {% else %}
+                <li class="layui-nav-item"><a href="{{ url_for('auth.login') }}">登录</a></li>
+                <li class="layui-nav-item"><a href="{{ url_for('auth.register') }}">注册</a></li>
+            {% endif %}
+        </ul>
+    </div>
+
+    <!-- 主体内容 -->
+    <div class="layui-container" style="margin-top: 30px;">
+        <div class="layui-row">
+            <div class="layui-col-md12">
+                <div class="layui-card">
+                    <div class="layui-card-header">关于GovCh系统</div>
+                    <div class="layui-card-body">
+                        <h2>GovCh系统介绍</h2>
+                        <p>GovCh是一个基于Python Flask框架开发的B/S架构系统，使用SQLite作为数据库，前端采用Layui组件库。</p>
+                        <br>
+                        <h3>技术栈</h3>
+                        <ul class="layui-timeline">
+                            <li class="layui-timeline-item">
+                                <i class="layui-icon layui-timeline-axis"></i>
+                                <div class="layui-timeline-content layui-text">
+                                    <h4 class="layui-timeline-title">后端</h4>
+                                    <p>Python 3.7+</p>
+                                    <p>Flask框架</p>
+                                </div>
+                            </li>
+                            <li class="layui-timeline-item">
+                                <i class="layui-icon layui-timeline-axis"></i>
+                                <div class="layui-timeline-content layui-text">
+                                    <h4 class="layui-timeline-title">数据库</h4>
+                                    <p>SQLite</p>
+                                    <p>SQLAlchemy ORM</p>
+                                </div>
+                            </li>
+                            <li class="layui-timeline-item">
+                                <i class="layui-icon layui-timeline-axis"></i>
+                                <div class="layui-timeline-content layui-text">
+                                    <h4 class="layui-timeline-title">前端</h4>
+                                    <p>Layui组件库</p>
+                                    <p>HTML5 + CSS3 + JavaScript</p>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 底部信息 -->
+    <div class="layui-footer" style="text-align: center;">
+        © 2024 GovCh 系统
+    </div>
+
+    <!-- 引入Layui JS -->
+    <script src="{{ url_for('static', filename='layui/layui.js') }}"></script>
+</body>
+</html>

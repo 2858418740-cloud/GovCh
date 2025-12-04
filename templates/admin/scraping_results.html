@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>采集结果 - 政企智能舆情分析平台</title>
+    <!-- 引入 layui CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='layui/css/layui.css') }}">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Microsoft YaHei', sans-serif;
+        }
+        .layui-layout-admin .layui-header {
+            background-color: #009688;
+        }
+        .layui-layout-admin .layui-side {
+            background-color: #393D49;
+        }
+        .layui-layout-admin .layui-body {
+            top: 60px;
+        }
+        .layui-logo {
+            color: #fff;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .admin-info {
+            color: #fff;
+            line-height: 60px;
+            margin-right: 20px;
+        }
+        .admin-info a {
+            color: #fff;
+            margin: 0 5px;
+        }
+        .admin-info a:hover {
+            text-decoration: underline;
+        }
+        .content-main {
+            padding: 20px;
+        }
+        .form-container {
+            background-color: #fff;
+            border-radius: 5px;
+            padding: 20px;
+            box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+        }
+        .image-preview {
+            max-width: 200px;
+            max-height: 150px;
+            object-fit: contain;
+        }
+        .task-info {
+            margin-bottom: 20px;
+            padding: 10px;
+            background-color: #f2f2f2;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <!-- layui 布局容器 -->
+    <div class="layui-layout layui-layout-admin">
+        <!-- 头部区域 -->
+        <div class="layui-header">
+            <!-- 左侧logo -->
+            <div class="layui-logo">政企智能舆情分析平台</div>
+            <!-- 右侧用户信息 -->
+            <div class="layui-layout-right">
+                <div class="admin-info">
+                    <span>欢迎您，{{ current_user.username }}</span>
+                    <a href="{{ url_for('main.dashboard') }}">返回首页</a>
+                    <a href="{{ url_for('auth.logout') }}">退出登录</a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 左侧导航栏 -->
+        <div class="layui-side layui-bg-black">
+            <div class="layui-side-scroll">
+                <!-- 导航菜单 -->
+                <ul class="layui-nav layui-nav-tree" lay-filter="admin-nav">
+                    <li class="layui-nav-item layui-nav-itemed">
+                        <a href="javascript:;">后台管理</a>
+                        <dl class="layui-nav-child">
+                            <dd><a href="{{ url_for('admin.admin_dashboard') }}">仪表盘</a></dd>
+                            <dd><a href="{{ url_for('admin.users') }}">用户管理</a></dd>
+                            <dd><a href="{{ url_for('admin.roles') }}">角色管理</a></dd>
+                            <dd><a href="{{ url_for('admin.scraping_tasks') }}">数据采集管理</a></dd>
+                            <dd><a href="{{ url_for('admin.settings') }}">系统设置</a></dd>
+                        </dl>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- 主内容区域 -->
+        <div class="layui-body">
+            <div class="content-main">
+                <div class="form-container">
+                    <h2>采集结果 - 关键词: {{ task.keyword }}</h2>
+                    <div class="layui-card-body">
+                <div class="layui-btn-container">
+                    <a href="{{ url_for('admin.scraping_tasks') }}" class="layui-btn layui-btn-primary">返回任务列表</a>
+                </div>
+            </div>
+            <div class="layui-card-body">
+                <!-- 任务信息 -->
+                <div class="layui-form layui-card-header layuiadmin-card-header-auto">
+                    <div class="layui-form-item">
+                        <div class="layui-inline">
+                            <label class="layui-form-label">任务ID</label>
+                            <div class="layui-input-inline">
+                                <span class="layui-input layui-disabled">{{ task.id }}</span>
+                            </div>
+                        </div>
+                        <div class="layui-inline">
+                            <label class="layui-form-label">状态</label>
+                            <div class="layui-input-inline">
+                                <span class="layui-input layui-disabled">
+                                    {% if task.status == 'pending' %}
+                                    待执行
+                                    {% elif task.status == 'running' %}
+                                    执行中
+                                    {% elif task.status == 'completed' %}
+                                    已完成
+                                    {% elif task.status == 'failed' %}
+                                    失败
+                                    {% endif %}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="layui-inline">
+                            <label class="layui-form-label">总采集数量</label>
+                            <div class="layui-input-inline">
+                                <span class="layui-input layui-disabled">{{ task.total_count or 0 }}</span>
+                            </div>
+                        </div>
+                        <div class="layui-inline">
+                            <label class="layui-form-label">创建时间</label>
+                            <div class="layui-input-inline">
+                                <span class="layui-input layui-disabled">{{ task.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</span>
+                            </div>
+                        </div>
+                        {% if task.completed_at %}
+                        <div class="layui-inline">
+                            <label class="layui-form-label">完成时间</label>
+                            <div class="layui-input-inline">
+                                <span class="layui-input layui-disabled">{{ task.completed_at.strftime('%Y-%m-%d %H:%M:%S') }}</span>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- 结果列表 -->
+                <div class="layui-table-container">
+                    <table class="layui-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>标题</th>
+                                <th>图片</th>
+                                <th>来源</th>
+                                <th>链接</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for collection in collections %}
+                            <tr>
+                                <td>{{ collection.id }}</td>
+                                <td>{{ collection.title }}</td>
+                                <td>
+                                    {% if collection.image_url %}
+                                    <img src="{{ collection.image_url }}" alt="图片" style="max-width: 100px; max-height: 100px;">
+                                    {% else %}
+                                    -无图片-
+                                    {% endif %}
+                                </td>
+                                <td>{{ collection.source }}</td>
+                                <td><a href="{{ collection.url }}" target="_blank">查看原文</a></td>
+                                <td>
+                                    <a href="{{ collection.url }}" target="_blank" class="layui-btn layui-btn-sm layui-btn-normal">访问</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- 分页 -->
+                <div class="layui-card-body">
+                    <div id="page" style="text-align: center;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 引入 layui JS -->
+    <script src="{{ url_for('static', filename='layui/layui.js') }}"></script>
+    <script>
+        // 定义模板变量
+        var urls = {
+            scraping_results: '{{ url_for('admin.scraping_results', task_id=task.id) }}'
+        };
+        
+        var templateData = {
+            total_collections: Number('{{ total_collections|default(0) }}'),
+            current_page: Number('{{ current_page|default(1) }}')
+        };
+        
+        layui.use(['table', 'laypage'], function() {
+            var table = layui.table;
+            var laypage = layui.laypage;
+            
+            // 分页
+            laypage.render({
+                elem: 'page',
+                count: templateData.total_collections,
+                limit: 15,
+                curr: templateData.current_page,
+                layout: ['prev', 'page', 'next', 'skip', 'count'],
+                jump: function(obj, first) {
+                    if (!first) {
+                        var url = urls.scraping_results + '?page=' + obj.curr;
+                        window.location.href = url;
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>

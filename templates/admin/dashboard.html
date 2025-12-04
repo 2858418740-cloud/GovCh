@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>后台管理 - 政企智能舆情分析平台</title>
+    <!-- 引入 layui CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='layui/css/layui.css') }}">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Microsoft YaHei', sans-serif;
+        }
+        .layui-layout-admin .layui-header {
+            background-color: #009688;
+        }
+        .layui-layout-admin .layui-side {
+            background-color: #393D49;
+        }
+        .layui-layout-admin .layui-body {
+            top: 60px;
+        }
+        .layui-logo {
+            color: #fff;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .admin-info {
+            color: #fff;
+            line-height: 60px;
+            margin-right: 20px;
+        }
+        .admin-info a {
+            color: #fff;
+            margin: 0 5px;
+        }
+        .admin-info a:hover {
+            text-decoration: underline;
+        }
+        .content-main {
+            padding: 20px;
+        }
+        .info-card {
+            background-color: #fff;
+            border-radius: 5px;
+            padding: 20px;
+            box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+        .info-card h3 {
+            margin-top: 0;
+            margin-bottom: 15px;
+            color: #333;
+        }
+        .info-statistics {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+        }
+        .stat-item {
+            text-align: center;
+            padding: 20px;
+            background-color: #f2f2f2;
+            border-radius: 5px;
+            min-width: 200px;
+            margin: 10px;
+        }
+        .stat-number {
+            font-size: 24px;
+            font-weight: bold;
+            color: #009688;
+        }
+        .stat-desc {
+            color: #666;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <!-- layui 布局容器 -->
+    <div class="layui-layout layui-layout-admin">
+        <!-- 头部区域 -->
+        <div class="layui-header">
+            <!-- 左侧logo -->
+            <div class="layui-logo">政企智能舆情分析平台</div>
+            <!-- 右侧用户信息 -->
+            <div class="layui-layout-right">
+                <div class="admin-info">
+                    <span>欢迎您，{{ current_user.username }}</span>
+                    <a href="{{ url_for('main.dashboard') }}">返回首页</a>
+                    <a href="{{ url_for('auth.logout') }}">退出登录</a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 左侧导航栏 -->
+        <div class="layui-side layui-bg-black">
+            <div class="layui-side-scroll">
+                <!-- 导航菜单 -->
+                <ul class="layui-nav layui-nav-tree" lay-filter="admin-nav">
+                    <li class="layui-nav-item layui-nav-itemed">
+                        <a href="javascript:;">后台管理</a>
+                        <dl class="layui-nav-child">
+                            <dd class="layui-this"><a href="{{ url_for('admin.admin_dashboard') }}">仪表盘</a></dd>
+                            <dd><a href="{{ url_for('admin.users') }}">用户管理</a></dd>
+                            <dd><a href="{{ url_for('admin.roles') }}">角色管理</a></dd>
+                            <dd><a href="{{ url_for('admin.scraping_tasks') }}">数据采集管理</a></dd>
+                            <dd><a href="{{ url_for('admin.settings') }}">系统设置</a></dd>
+                        </dl>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- 主内容区域 -->
+        <div class="layui-body">
+            <div class="content-main">
+                <div class="info-card">
+                    <h3>系统概况</h3>
+                    <div class="info-statistics">
+                        <div class="stat-item">
+                            <div class="stat-number">123</div>
+                            <div class="stat-desc">总用户数</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-number">15</div>
+                            <div class="stat-desc">今日新增</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-number">5</div>
+                            <div class="stat-desc">在线用户</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-number">2</div>
+                            <div class="stat-desc">管理员数</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="info-card">
+                    <h3>最近活动</h3>
+                    <table class="layui-table">
+                        <thead>
+                            <tr>
+                                <th>用户</th>
+                                <th>操作</th>
+                                <th>时间</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>{{ current_user.username }}</td>
+                                <td>登录系统</td>
+                                <td>刚刚</td>
+                            </tr>
+                            <!-- 这里可以动态加载最近活动数据 -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 引入 layui JS -->
+    <script src="{{ url_for('static', filename='layui/layui.js') }}"></script>
+    <script>
+        layui.use(['element', 'layer'], function() {
+            var element = layui.element;
+            var layer = layui.layer;
+            
+            // 初始化导航
+            element.init();
+        });
+    </script>
+</body>
+</html>

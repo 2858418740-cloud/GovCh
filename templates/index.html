@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GovCh - 首页</title>
+    <!-- 引入Layui CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='layui/css/layui.css') }}">
+</head>
+<body>
+    <!-- 头部导航 -->
+    <div class="layui-header">
+        <div class="layui-logo">GovCh</div>
+        <ul class="layui-nav layui-layout-right">
+            <li class="layui-nav-item"><a href="{{ url_for('main.index') }}">首页</a></li>
+            <li class="layui-nav-item"><a href="{{ url_for('main.about') }}">关于</a></li>
+            <li class="layui-nav-item"><a href="{{ url_for('main.dashboard') }}">仪表盘</a></li>
+            {% if current_user.is_authenticated %}
+                {% if current_user.role.name == 'admin' %}
+                    <li class="layui-nav-item layui-nav-itemed">
+                        <a href="javascript:;">后台管理</a>
+                        <dl class="layui-nav-child">
+                            <dd><a href="{{ url_for('admin.admin_dashboard') }}">管理仪表盘</a></dd>
+                            <dd><a href="{{ url_for('admin.users') }}">用户管理</a></dd>
+                            <dd><a href="{{ url_for('admin.roles') }}">角色管理</a></dd>
+                            <dd><a href="{{ url_for('admin.settings') }}">系统设置</a></dd>
+                        </dl>
+                    </li>
+                {% endif %}
+                <li class="layui-nav-item">
+                    <a href="javascript:;">{{ current_user.username }}</a>
+                    <dl class="layui-nav-child">
+                        <dd><a href="{{ url_for('auth.logout') }}">退出登录</a></dd>
+                    </dl>
+                </li>
+            {% else %}
+                <li class="layui-nav-item"><a href="{{ url_for('auth.login') }}">登录</a></li>
+                <li class="layui-nav-item"><a href="{{ url_for('auth.register') }}">注册</a></li>
+            {% endif %}
+        </ul>
+    </div>
+
+    <!-- 主体内容 -->
+    <div class="layui-container" style="margin-top: 30px;">
+        <div class="layui-row">
+            <div class="layui-col-md12">
+                <div class="layui-card">
+                    <div class="layui-card-header">欢迎使用GovCh系统</div>
+                    <div class="layui-card-body">
+                        <p>这是一个基于Flask和Layui开发的B/S系统。</p>
+                        <p>技术栈：Python3 + Flask + SQLite + Layui</p>
+                        <div class="layui-btn-container">
+                            <button class="layui-btn layui-btn-primary">主要按钮</button>
+                            <button class="layui-btn">次要按钮</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 底部信息 -->
+    <div class="layui-footer" style="text-align: center;">
+        © 2024 GovCh 系统
+    </div>
+
+    <!-- 引入Layui JS -->
+    <script src="{{ url_for('static', filename='layui/layui.js') }}"></script>
+    <script>
+        layui.use(['layer', 'form'], function(){            var layer = layui.layer;
+            var form = layui.form;
+            
+            // 页面加载完成后显示欢迎信息
+            layer.msg('欢迎使用GovCh系统！');
+        });
+    </script>
+</body>
+</html>

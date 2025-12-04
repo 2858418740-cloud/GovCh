@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>角色管理 - 政企智能舆情分析平台</title>
+    <!-- 引入 layui CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='layui/css/layui.css') }}">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Microsoft YaHei', sans-serif;
+        }
+        .layui-layout-admin .layui-header {
+            background-color: #009688;
+        }
+        .layui-layout-admin .layui-side {
+            background-color: #393D49;
+        }
+        .layui-layout-admin .layui-body {
+            top: 60px;
+        }
+        .layui-logo {
+            color: #fff;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .admin-info {
+            color: #fff;
+            line-height: 60px;
+            margin-right: 20px;
+        }
+        .admin-info a {
+            color: #fff;
+            margin: 0 5px;
+        }
+        .admin-info a:hover {
+            text-decoration: underline;
+        }
+        .content-main {
+            padding: 20px;
+        }
+        .table-container {
+            background-color: #fff;
+            border-radius: 5px;
+            padding: 20px;
+            box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+        }
+        .table-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .table-header h3 {
+            margin: 0;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <!-- layui 布局容器 -->
+    <div class="layui-layout layui-layout-admin">
+        <!-- 头部区域 -->
+        <div class="layui-header">
+            <!-- 左侧logo -->
+            <div class="layui-logo">政企智能舆情分析平台</div>
+            <!-- 右侧用户信息 -->
+            <div class="layui-layout-right">
+                <div class="admin-info">
+                    <span>欢迎您，{{ current_user.username }}</span>
+                    <a href="{{ url_for('main.dashboard') }}">返回首页</a>
+                    <a href="{{ url_for('auth.logout') }}">退出登录</a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 左侧导航栏 -->
+        <div class="layui-side layui-bg-black">
+            <div class="layui-side-scroll">
+                <!-- 导航菜单 -->
+                <ul class="layui-nav layui-nav-tree" lay-filter="admin-nav">
+                    <li class="layui-nav-item layui-nav-itemed">
+                        <a href="javascript:;">后台管理</a>
+                        <dl class="layui-nav-child">
+                            <dd><a href="{{ url_for('admin.admin_dashboard') }}">仪表盘</a></dd>
+                            <dd><a href="{{ url_for('admin.users') }}">用户管理</a></dd>
+                            <dd class="layui-this"><a href="{{ url_for('admin.roles') }}">角色管理</a></dd>
+                            <dd><a href="{{ url_for('admin.scraping_tasks') }}">数据采集管理</a></dd>
+                            <dd><a href="{{ url_for('admin.settings') }}">系统设置</a></dd>
+                        </dl>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- 主内容区域 -->
+        <div class="layui-body">
+            <div class="content-main">
+                <div class="table-container">
+                    <div class="table-header">
+                        <h3>角色管理</h3>
+                        <button class="layui-btn layui-btn-normal" id="addRoleBtn">添加角色</button>
+                    </div>
+                    
+                    <!-- 角色列表 -->
+                    <table class="layui-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>角色名称</th>
+                                <th>描述</th>
+                                <th>创建时间</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for role in roles %}
+                            <tr>
+                                <td>{{ role.id }}</td>
+                                <td>{{ role.name }}</td>
+                                <td>{{ role.description or '-' }}</td>
+                                <td>{{ role.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                                <td>
+                                    <button class="layui-btn layui-btn-xs layui-btn-edit" data-id="{{ role.id }}">编辑</button>
+                                    {% if role.name != 'admin' and role.name != 'user' %}
+                                    <button class="layui-btn layui-btn-xs layui-btn-danger" data-id="{{ role.id }}">删除</button>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 添加/编辑角色弹窗 -->
+    <div id="roleForm" style="display: none;">
+        <form id="roleFormElem" class="layui-form" lay-filter="roleForm" action="{{ url_for('admin.add_role') }}" method="POST">
+            <input type="hidden" name="id">
+            <div class="layui-form-item">
+                <label class="layui-form-label">角色名称</label>
+                <div class="layui-input-block">
+                    <input type="text" name="name" required lay-verify="required" placeholder="请输入角色名称" autocomplete="off" class="layui-input">
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">描述</label>
+                <div class="layui-input-block">
+                    <textarea name="description" placeholder="请输入角色描述" class="layui-textarea"></textarea>
+                </div>
+            </div>
+        </form>
+    </div>
+    
+    <!-- 引入 layui JS -->
+    <script src="{{ url_for('static', filename='layui/layui.js') }}"></script>
+    <script>
+        // 定义模板变量
+        var urls = {
+            add_role: '{{ url_for('admin.add_role') }}',
+            edit_role: '{{ url_for('admin.edit_role', id=0) }}',
+            get_role: '{{ url_for('admin.get_role', id=0) }}',
+            delete_role: '{{ url_for('admin.delete_role', id=0) }}'
+        };
+        
+        layui.use(['element', 'layer', 'form'], function() {
+            var element = layui.element;
+            var layer = layui.layer;
+            var form = layui.form;
+            
+            // 初始化导航
+            element.init();
+            
+            // 添加角色按钮点击事件
+            document.getElementById('addRoleBtn').onclick = function() {
+                var formElem = document.getElementById('roleFormElem');
+                formElem.action = urls.add_role;
+                formElem.method = 'POST';
+                form.val('roleForm', {"id": ""});
+                layer.open({
+                    type: 1,
+                    title: '添加角色',
+                    content: document.getElementById('roleForm'),
+                    area: ['500px', '300px'],
+                    btn: ['保存', '取消'],
+                    yes: function(index, layero) {
+                        // 提交表单
+                        formElem.submit();
+                        layer.close(index);
+                    }
+                });
+            };
+            
+            // 编辑按钮点击事件
+            var editBtns = document.querySelectorAll('.layui-btn-edit');
+            editBtns.forEach(function(btn) {
+                btn.onclick = function() {
+                    var id = this.getAttribute('data-id');
+                    var formElem = document.getElementById('roleFormElem');
+                    formElem.action = urls.edit_role.replace('0', id);
+                    formElem.method = 'POST';
+                    
+                    // 通过AJAX获取角色数据并填充表单
+                    var xhr = new XMLHttpRequest();
+                    xhr.open('GET', urls.get_role.replace('0', id), true);
+                    xhr.onload = function() {
+                        if (xhr.status === 200) {
+                            var role = JSON.parse(xhr.responseText);
+                            form.val('roleForm', role);
+                            layer.open({
+                                type: 1,
+                                title: '编辑角色',
+                                content: document.getElementById('roleForm'),
+                                area: ['500px', '300px'],
+                                btn: ['保存', '取消'],
+                                yes: function(index, layero) {
+                                    // 提交表单
+                                    formElem.submit();
+                                    layer.close(index);
+                                }
+                            });
+                        }
+                    };
+                    xhr.send();
+                };
+            });
+            
+            // 删除按钮点击事件
+            var deleteBtns = document.querySelectorAll('.layui-btn-danger');
+            deleteBtns.forEach(function(btn) {
+                btn.onclick = function() {
+                    var id = this.getAttribute('data-id');
+                    layer.confirm('确定要删除这个角色吗？', {
+                        btn: ['确定', '取消']
+                    }, function(index) {
+                        // 删除角色逻辑
+                        window.location.href = urls.delete_role.replace('0', id);
+                        layer.close(index);
+                        layer.msg('角色删除成功！', {icon: 1});
+                    });
+                };
+            });
+        });
+    </script>
+</body>
+</html>
