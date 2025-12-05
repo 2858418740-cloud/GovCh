@@ -1,0 +1,75 @@
+{% extends 'admin/base.html' %}
+
+{% block content %}
+<div class="layui-container">
+    <h1>采集规则库</h1>
+    <button class="layui-btn layui-btn-normal" id="addRuleBtn">新增规则</button>
+    <table class="layui-table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>站点名称</th>
+                <th>站点URL</th>
+                <th>标题XPath</th>
+                <th>内容XPath</th>
+                <th>请求头</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for rule in rules %}
+            <tr>
+                <td>{{ rule.id }}</td>
+                <td>{{ rule.site_name }}</td>
+                <td>{{ rule.site_url }}</td>
+                <td>{{ rule.title_xpath }}</td>
+                <td>{{ rule.content_xpath }}</td>
+                <td>{{ rule.request_headers }}</td>
+                <td>
+                    <button class="layui-btn layui-btn-sm layui-btn-warm edit-btn" data-id="{{ rule.id }}">编辑</button>
+                    <button class="layui-btn layui-btn-sm layui-btn-danger delete-btn" data-id="{{ rule.id }}">删除</button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<script src="{{ url_for('static', filename='layui/layui.js') }}"></script>
+<script>
+    layui.use(['layer', 'form'], function() {
+        var layer = layui.layer;
+
+        document.getElementById('addRuleBtn').onclick = function() {
+            layer.open({
+                type: 2,
+                title: '新增采集规则',
+                content: '{{ url_for("admin.add_scraping_rule_library") }}',
+                area: ['500px', '600px']
+            });
+        };
+
+        document.querySelectorAll('.edit-btn').forEach(function(btn) {
+            btn.onclick = function() {
+                var id = this.getAttribute('data-id');
+                layer.open({
+                    type: 2,
+                    title: '编辑采集规则',
+                    content: '{{ url_for("admin.edit_scraping_rule_library", id=0) }}'.replace('0', id),
+                area: ['500px', '600px']
+                });
+            };
+        });
+
+        document.querySelectorAll('.delete-btn').forEach(function(btn) {
+            btn.onclick = function() {
+                var id = this.getAttribute('data-id');
+                layer.confirm('确定删除该规则吗？', function(index) {
+                    window.location.href = '{{ url_for("admin.delete_scraping_rule_library", id=0) }}'.replace('0', id);
+                    layer.close(index);
+                });
+            };
+        });
+    });
+</script>
+{% endblock %}

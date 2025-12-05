@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>系统设置 - 政企智能舆情分析平台</title>
+    <!-- 引入 layui CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='layui/css/layui.css') }}">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Microsoft YaHei', sans-serif;
+        }
+        .layui-layout-admin .layui-header {
+            background-color: #009688;
+        }
+        .layui-layout-admin .layui-side {
+            background-color: #393D49;
+        }
+        .layui-layout-admin .layui-body {
+            top: 60px;
+        }
+        .layui-logo {
+            color: #fff;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .admin-info {
+            color: #fff;
+            line-height: 60px;
+            margin-right: 20px;
+        }
+        .admin-info a {
+            color: #fff;
+            margin: 0 5px;
+        }
+        .admin-info a:hover {
+            text-decoration: underline;
+        }
+        .content-main {
+            padding: 20px;
+        }
+        .settings-container {
+            background-color: #fff;
+            border-radius: 5px;
+            padding: 20px;
+            box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+        }
+        .settings-header {
+            margin-bottom: 20px;
+        }
+        .settings-header h3 {
+            margin: 0;
+            color: #333;
+        }
+        .settings-form {
+            max-width: 600px;
+        }
+        .logo-preview {
+            margin: 10px 0;
+            padding: 10px;
+            border: 1px solid #e6e6e6;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+            display: inline-block;
+        }
+        .logo-preview img {
+            max-width: 200px;
+            max-height: 100px;
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <!-- layui 布局容器 -->
+    <div class="layui-layout layui-layout-admin">
+        <!-- 头部区域 -->
+        <div class="layui-header">
+            <!-- 左侧logo -->
+            <div class="layui-logo">政企智能舆情分析平台</div>
+            <!-- 右侧用户信息 -->
+            <div class="layui-layout-right">
+                <div class="admin-info">
+                    <span>欢迎您，{{ current_user.username }}</span>
+                    <a href="{{ url_for('main.dashboard') }}">返回首页</a>
+                    <a href="{{ url_for('auth.logout') }}">退出登录</a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 左侧导航栏 -->
+        <div class="layui-side layui-bg-black">
+            <div class="layui-side-scroll">
+                <!-- 导航菜单 -->
+                <ul class="layui-nav layui-nav-tree" lay-filter="admin-nav">
+                    <li class="layui-nav-item layui-nav-itemed">
+                        <a href="javascript:;">后台管理</a>
+                        <dl class="layui-nav-child">
+                            <dd><a href="{{ url_for('admin.admin_dashboard') }}">仪表盘</a></dd>
+                            <dd><a href="{{ url_for('admin.users') }}">用户管理</a></dd>
+                            <dd><a href="{{ url_for('admin.roles') }}">角色管理</a></dd>
+                            <dd><a href="{{ url_for('admin.scraping_tasks') }}">数据采集管理</a></dd>
+                            <dd><a href="{{ url_for('admin.scraping_rules') }}">采集规则库</a></dd>
+                            <dd><a href="{{ url_for('admin.data_warehouse') }}">数据仓库管理</a></dd>
+                            
+                            <dd class="layui-this"><a href="{{ url_for('admin.settings') }}">系统设置</a></dd>
+                        </dl>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- 主内容区域 -->
+        <div class="layui-body">
+            <div class="content-main">
+                <div class="settings-container">
+                    <div class="settings-header">
+                        <h3>系统设置</h3>
+                    </div>
+                    
+                    <form class="layui-form settings-form" action="{{ url_for('admin.settings') }}" method="POST" enctype="multipart/form-data">
+                        <div class="layui-form-item">
+                            <label class="layui-form-label">应用名称</label>
+                            <div class="layui-input-block">
+                                <input type="text" name="app_name" value="{{ settings.app_name }}" required lay-verify="required" placeholder="请输入应用名称" autocomplete="off" class="layui-input">
+                            </div>
+                        </div>
+                        <div class="layui-form-item">
+                            <label class="layui-form-label">应用LOGO</label>
+                            <div class="layui-input-block">
+                                <button type="button" class="layui-btn" id="logoBtn">
+                                    <i class="layui-icon">&#xe67c;</i>上传LOGO
+                                    <input type="file" name="logo" accept="image/*" style="display: none;">
+                                </button>
+                                <div class="logo-preview">
+                                    {% if settings.logo_url %}
+                                    <img src="{{ url_for('static', filename='uploads/' + settings.logo_url) }}" alt="当前LOGO" style="max-width: 200px; max-height: 100px;">
+                                    {% else %}
+                                    <span>暂无LOGO</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="layui-form-item">
+                            <div class="layui-input-block">
+                                <button class="layui-btn" lay-submit lay-filter="settingsForm">保存设置</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 引入 layui JS -->
+    <script src="{{ url_for('static', filename='layui/layui.js') }}"></script>
+    <script>
+        layui.use(['element', 'layer', 'form', 'upload'], function() {
+            var element = layui.element;
+            var layer = layui.layer;
+            var form = layui.form;
+            var upload = layui.upload;
+            
+            // 初始化导航
+            element.init();
+            
+            // LOGO上传点击事件
+            document.getElementById('logoBtn').onclick = function() {
+                document.querySelector('input[name="logo"]').click();
+            };
+            
+            // LOGO文件选择事件
+            document.querySelector('input[name="logo"]').onchange = function() {
+                var file = this.files[0];
+                if (file) {
+                    var reader = new FileReader();
+                    reader.onload = function(e) {
+                        var preview = document.querySelector('.logo-preview');
+                        preview.innerHTML = '<img src="' + e.target.result + '" alt="预览LOGO">';
+                    };
+                    reader.readAsDataURL(file);
+                }
+            };
+            
+            // 表单提交成功后的处理
+            form.on('submit(settingsForm)', function(data) {
+                // 这里可以添加表单验证逻辑
+                return true;
+            });
+        });
+    </script>
+</body>
+</html>

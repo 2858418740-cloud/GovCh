@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数据仓库管理 - 政企智能舆情分析平台</title>
+    <!-- 引入 layui CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='layui/css/layui.css') }}">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Microsoft YaHei', sans-serif;
+        }
+        .layui-layout-admin .layui-header {
+            background-color: #009688;
+        }
+        .layui-layout-admin .layui-side {
+            background-color: #393D49;
+        }
+        .layui-layout-admin .layui-body {
+            top: 60px;
+        }
+        .layui-logo {
+            color: #fff;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .admin-info {
+            color: #fff;
+            line-height: 60px;
+            margin-right: 20px;
+        }
+        .admin-info a {
+            color: #fff;
+            margin: 0 5px;
+        }
+        .admin-info a:hover {
+            text-decoration: underline;
+        }
+        .content-main {
+            padding: 20px;
+        }
+        .table-container {
+            background-color: #fff;
+            border-radius: 5px;
+            padding: 20px;
+            box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+        }
+        .table-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .table-header h3 {
+            margin: 0;
+            color: #333;
+        }
+        .image-preview {
+            width: 80px;
+            height: 60px;
+            object-fit: cover;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <!-- layui 布局容器 -->
+    <div class="layui-layout layui-layout-admin">
+        <!-- 头部区域 -->
+        <div class="layui-header">
+            <!-- 左侧logo -->
+            <div class="layui-logo">政企智能舆情分析平台</div>
+            <!-- 右侧用户信息 -->
+            <div class="layui-layout-right">
+                <div class="admin-info">
+                    <span>欢迎您，{{ current_user.username }}</span>
+                    <a href="{{ url_for('main.dashboard') }}">返回首页</a>
+                    <a href="{{ url_for('auth.logout') }}">退出登录</a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 左侧导航栏 -->
+        <div class="layui-side layui-bg-black">
+            <div class="layui-side-scroll">
+                <!-- 导航菜单 -->
+                <ul class="layui-nav layui-nav-tree" lay-filter="admin-nav">
+                    <li class="layui-nav-item layui-nav-itemed">
+                        <a href="javascript:;">后台管理</a>
+                        <dl class="layui-nav-child">
+                            <dd><a href="{{ url_for('admin.admin_dashboard') }}">仪表盘</a></dd>
+                            <dd><a href="{{ url_for('admin.users') }}">用户管理</a></dd>
+                            <dd><a href="{{ url_for('admin.roles') }}">角色管理</a></dd>
+                            <dd><a href="{{ url_for('admin.scraping_tasks') }}">数据采集管理</a></dd>
+                            <dd><a href="{{ url_for('admin.scraping_rules') }}">采集规则库</a></dd>
+                            <dd class="layui-this"><a href="{{ url_for('admin.data_warehouse') }}">数据仓库管理</a></dd>
+                            
+                            <dd><a href="{{ url_for('admin.settings') }}">系统设置</a></dd>
+                        </dl>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- 主内容区域 -->
+        <div class="layui-body">
+            <div class="content-main">
+                <div class="layui-card">
+                    <div class="layui-card-header">
+                        <div class="table-header">
+                            <h3>数据仓库管理</h3>
+                            <div>
+                                <button class="layui-btn layui-btn-warm" id="ai-analyze-btn">AI分析</button>
+                                <button class="layui-btn layui-btn-danger" id="batch-delete-btn">批量删除</button>
+                                <button class="layui-btn layui-btn-normal" id="batch-collect-btn">批量详细采集</button>
+                                <button class="layui-btn layui-btn-primary" id="batch-save-btn">批量保存到数据库</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="layui-card-body">
+                        <!-- 搜索区域 -->
+                        <div class="layui-form layui-card-header layuiadmin-card-header-auto">
+                            <div class="layui-form-item">
+                                <div class="layui-inline">
+                                    <label class="layui-form-label">搜索</label>
+                                    <div class="layui-input-inline" style="width: 240px;">
+                                        <input type="text" name="search" placeholder="请输入标题、关键词或来源" class="layui-input" id="search-input">
+                                    </div>
+                                </div>
+                                <div class="layui-inline">
+                                    <button class="layui-btn layui-btn-normal" id="search-btn">搜索</button>
+                                    <button class="layui-btn layui-btn-primary" id="reset-btn">重置</button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 数据表格 -->
+                        <table class="layui-table" id="data-table" lay-filter="data-table"></table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 编辑弹窗 -->
+    <div id="edit-modal" style="display: none;">
+        <form class="layui-form" id="edit-form" lay-filter="edit-form">
+            <input type="hidden" name="id" id="edit-id">
+            <div class="layui-form-item">
+                <label class="layui-form-label">标题</label>
+                <div class="layui-input-block">
+                    <input type="text" name="title" required lay-verify="required" placeholder="请输入标题" class="layui-input" id="edit-title">
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">来源</label>
+                <div class="layui-input-block">
+                    <input type="text" name="source" placeholder="请输入来源" class="layui-input" id="edit-source">
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">URL</label>
+                <div class="layui-input-block">
+                    <input type="text" name="url" required lay-verify="required" placeholder="请输入URL" class="layui-input" id="edit-url">
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">图片URL</label>
+                <div class="layui-input-block">
+                    <input type="text" name="image_url" placeholder="请输入图片URL" class="layui-input" id="edit-image_url">
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">关键词</label>
+                <div class="layui-input-block">
+                    <input type="text" name="keyword" placeholder="请输入关键词" class="layui-input" id="edit-keyword">
+                </div>
+            </div>
+            <div class="layui-form-item layui-form-text">
+                <div class="layui-input-block">
+                    <button class="layui-btn" lay-submit lay-filter="submit-edit">保存</button>
+                    <button type="button" class="layui-btn layui-btn-primary" id="cancel-edit">取消</button>
+                </div>
+            </div>
+        </form>
+    </div>
+    
+    <!-- AI分析弹窗 -->
+    <div id="ai-analyze-modal" style="display: none;">
+        <div class="layui-form">
+            <div class="layui-form-item">
+                <label class="layui-form-label">分析类型</label>
+                <div class="layui-input-block">
+                    <select name="analyze_type" lay-verify="required" id="analyze-type">
+                        <option value="sentiment">情感分析</option>
+                        <option value="keyword">关键词提取</option>
+                        <option value="summary">自动摘要</option>
+                        <option value="topic">主题分类</option>
+                    </select>
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <div class="layui-input-block">
+                    <button class="layui-btn" id="submit-analyze">开始分析</button>
+                    <button type="button" class="layui-btn layui-btn-primary" id="cancel-analyze">取消</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 引入 layui JS -->
+    <script src="{{ url_for('static', filename='layui/layui.js') }}"></script>
+    <script>
+        layui.use(['table', 'form', 'layer', 'util'], function() {
+            var table = layui.table;
+            var form = layui.form;
+            var layer = layui.layer;
+            var util = layui.util;
+            
+            // 初始化表格
+            var tableIns = table.render({
+                elem: '#data-table',
+                url: {{ url_for('admin.get_warehouse_data')|tojson }},
+                page: true,
+                limit: 10,
+                limits: [10, 20, 30, 50, 100],
+                height: 'full-200',
+                cols: [[
+                    {type: 'checkbox', fixed: 'left'},
+                    {field: 'id', title: 'ID', width: 80, sort: true},
+                    {field: 'title', title: '标题', width: 300, templet: function(d) {
+                        return '<div style="max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">' + d.title + '</div>';
+                    }},
+                    {field: 'source', title: '来源', width: 120},
+                    {field: 'image_url', title: '图片', width: 100, templet: function(d) {
+                        if (d.image_url) {
+                            return '<img src="' + d.image_url + '" class="image-preview" onerror="this.style.display=\'none\';">';
+                        } else {
+                            return '<span>无图片</span>';
+                        }
+                    }},
+                    {field: 'keyword', title: '关键词', width: 120},
+                    {field: 'collected_at', title: '采集时间', width: 180, sort: true},
+                    {field: 'is_deep_collected', title: '深度采集', width: 100, templet: function(d) {
+                        return d.is_deep_collected ? '<span class="layui-badge layui-bg-green">是</span>' : '<span class="layui-badge layui-bg-gray">否</span>';
+                    }},
+                    {field: 'saved_to_db', title: '已保存', width: 80, templet: function(d) {
+                        return d.saved_to_db ? '<span class="layui-badge layui-bg-blue">是</span>' : '<span class="layui-badge layui-bg-red">否</span>';
+                    }},
+                    {fixed: 'right', title: '操作', width: 240, align: 'center', toolbar: '#tool-bar'}
+                ]],
+                done: function() {
+                    // 表格渲染完成后执行
+                }
+            });
+            
+            // 工具栏模板
+            table.on('tool(data-table)', function(obj) {
+                var data = obj.data;
+                if (obj.event === 'edit') {
+                    // 编辑操作
+                    openEditModal(data);
+                } else if (obj.event === 'delete') {
+                    // 删除操作
+                    deleteData([data.id]);
+                } else if (obj.event === 'view') {
+                    // 查看详情
+                    window.open(data.url, '_blank');
+                } else if (obj.event === 'collect') {
+                    // 详细内容采集
+                    collectDetailContent([data.id]);
+                } else if (obj.event === 'saveToDb') {
+                    // 保存到数据库
+                    saveToDatabase([data.id]);
+                } else if (obj.event === 'preview') {
+                    // 预览详细内容
+                    previewDetailContent(data.id);
+                }
+            });
+            
+            // 搜索按钮
+            document.getElementById('search-btn').onclick = function() {
+                var searchValue = document.getElementById('search-input').value;
+                tableIns.reload({
+                    where: {search: searchValue},
+                    page: {curr: 1}
+                });
+            };
+            
+            // 重置按钮
+            document.getElementById('reset-btn').onclick = function() {
+                document.getElementById('search-input').value = '';
+                tableIns.reload({
+                    where: {search: ''},
+                    page: {curr: 1}
+                });
+            };
+            
+            // 搜索框回车事件
+            document.getElementById('search-input').onkeydown = function(e) {
+                if (e.keyCode === 13) {
+                    document.getElementById('search-btn').click();
+                }
+            };
+            
+            // 预览详细内容函数
+            function previewDetailContent(dataId) {
+                layer.load(2);
+                
+                // 调用获取详细内容接口
+                fetch('/admin/api/get_detail_content/' + dataId, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    layer.closeAll('loading');
+                    if (data.code === 0) {
+                        // 显示预览模态框
+                        layer.open({
+                            type: 1,
+                            title: '详细内容预览',
+                            area: ['80%', '80%'],
+                            content: `
+                                <div style="padding: 20px;">
+                                    <h3>${data.data.title}</h3>
+                                    <p style="color: #666; margin-bottom: 20px;">来源：${data.data.source}</p>
+                                    <div style="border: 1px solid #eee; padding: 15px; background-color: #f9f9f9; min-height: 300px;">
+                                        ${data.data.content || '暂无详细内容'}
+                                    </div>
+                                </div>
+                            `,
+                            btn: ['关闭', '保存到数据库'],
+                            yes: function(index) {
+                                layer.close(index);
+                            },
+                            btn2: function(index) {
+                                // 保存到数据库
+                                saveToDatabase([dataId]);
+                                layer.close(index);
+                            }
+                        });
+                    } else {
+                        layer.msg(data.msg, {icon: 5});
+                    }
+                })
+                .catch(error => {
+                    layer.closeAll('loading');
+                    layer.msg('获取详细内容失败：' + error.message, {icon: 5});
+                });
+            };
+            
+            // 批量删除按钮
+            document.getElementById('batch-delete-btn').onclick = function() {
+                var checkStatus = table.checkStatus('data-table');
+                var data = checkStatus.data;
+                if (data.length === 0) {
+                    layer.msg('请选择要删除的数据', {icon: 5});
+                    return;
+                }
+                var ids = data.map(function(item) { return item.id; });
+                deleteData(ids);
+            };
+            
+            // 批量详细采集按钮
+            document.getElementById('batch-collect-btn').onclick = function() {
+                var checkStatus = table.checkStatus('data-table');
+                var data = checkStatus.data;
+                if (data.length === 0) {
+                    layer.msg('请选择要采集的数据', {icon: 5});
+                    return;
+                }
+                var ids = data.map(function(item) { return item.id; });
+                collectDetailContent(ids);
+            };
+            
+            // 批量保存到数据库按钮
+            document.getElementById('batch-save-btn').onclick = function() {
+                var checkStatus = table.checkStatus('data-table');
+                var data = checkStatus.data;
+                if (data.length === 0) {
+                    layer.msg('请选择要保存的数据', {icon: 5});
+                    return;
+                }
+                var ids = data.map(function(item) { return item.id; });
+                saveToDatabase(ids);
+            };
+            
+            // 详细内容采集函数
+            function collectDetailContent(ids) {
+                layer.confirm('确定要采集选中数据的详细内容吗？', {
+                    icon: 3,
+                    title: '确认采集'
+                }, function(index) {
+                    layer.load(2);
+                    
+                    // 调用详细内容采集接口
+                    fetch('/admin/api/collect_detail_content', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            data_ids: ids,
+                            update_rule: true  // 开启规则自动更新
+                        })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        layer.closeAll('loading');
+                        if (data.code === 0) {
+                            layer.msg(data.msg, {icon: 1});
+                            // 刷新表格
+                            tableIns.reload();
+                        } else {
+                            layer.msg(data.msg, {icon: 5});
+                        }
+                    })
+                    .catch(error => {
+                        layer.closeAll('loading');
+                        layer.msg('采集失败：' + error.message, {icon: 5});
+                    });
+                    
+                    layer.close(index);
+                });
+            }
+            
+            // 保存到数据库函数
+            function saveToDatabase(ids) {
+                layer.confirm('确定要将选中数据保存到数据库吗？', {
+                    icon: 3,
+                    title: '确认保存'
+                }, function(index) {
+                    layer.load(2);
+                    
+                    // 调用保存到数据库接口
+                    var apiUrl = ids.length === 1 ? '/admin/api/save_to_database' : '/admin/api/batch_save_to_database';
+                    var requestBody = ids.length === 1 ? {id: ids[0]} : {ids: ids};
+                    
+                    fetch(apiUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(requestBody)
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        layer.closeAll('loading');
+                        if (data.code === 0) {
+                            layer.msg(data.msg, {icon: 1});
+                            // 刷新表格
+                            tableIns.reload();
+                        } else {
+                            layer.msg(data.msg, {icon: 5});
+                        }
+                    })
+                    .catch(error => {
+                        layer.closeAll('loading');
+                        layer.msg('保存失败：' + error.message, {icon: 5});
+                    });
+                    
+                    layer.close(index);
+                });
+            }
+            
+            // AI分析按钮
+            document.getElementById('ai-analyze-btn').onclick = function() {
+                var checkStatus = table.checkStatus('data-table');
+                var data = checkStatus.data;
+                if (data.length === 0) {
+                    layer.msg('请选择要分析的数据', {icon: 5});
+                    return;
+                }
+                
+                // 保存选中的数据ID到模态框元素（使用自定义属性）
+                document.getElementById('ai-analyze-modal').setAttribute('data-selected-ids', JSON.stringify(data.map(function(item) { return item.id; })));
+                
+                // 打开AI分析弹窗并保存索引
+                aiAnalyzeModalIndex = layer.open({
+                    type: 1,
+                    title: 'AI分析',
+                    content: document.getElementById('ai-analyze-modal'),
+                    area: ['500px', '200px'],
+                    success: function(layero, index) {
+                        // 表单渲染
+                        form.render();
+                    }
+                });
+            };
+            
+            // 提交AI分析
+        document.getElementById('submit-analyze').onclick = function() {
+            // 获取选中的数据ID
+            var analyzeModal = document.getElementById('ai-analyze-modal');
+            var selectedIds = JSON.parse(analyzeModal.getAttribute('data-selected-ids'));
+            var analyzeType = document.getElementById('analyze-type').value;
+                
+                layer.load(2);
+                
+                // 调用AI分析接口
+                fetch({{ url_for('admin.analyze_warehouse_data')|tojson }}, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        ids: selectedIds,
+                        analyze_type: analyzeType
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    layer.closeAll('loading');
+                    if (data.code === 0) {
+                        // 显示分析结果
+                        layer.open({
+                            type: 1,
+                            title: 'AI分析结果',
+                            content: '<div style="padding: 20px;">' +
+                                     '<h4>分析类型：' + analyzeType + '</h4>' +
+                                     '<p>分析数量：' + data.result.total_analyzed + ' 条</p>' +
+                                     '<h5>情感分布：</h5>' +
+                                     '<p>积极：' + data.result.sentiment_distribution.positive + '%</p>' +
+                                     '<p>中性：' + data.result.sentiment_distribution.neutral + '%</p>' +
+                                     '<p>消极：' + data.result.sentiment_distribution.negative + '%</p>' +
+                                     '<h5>关键词：</h5>' +
+                                     '<p>' + data.result.keywords.join(', ') + '</p>' +
+                                     '</div>',
+                            area: ['400px', '350px']
+                        });
+                    } else {
+                        layer.msg(data.msg, {icon: 5});
+                    }
+                })
+                .catch(error => {
+                    layer.closeAll('loading');
+                    layer.msg('分析失败：' + error.message, {icon: 5});
+                });
+                
+                layer.close(layerIndex);
+            };
+            
+            // 取消AI分析
+            document.getElementById('cancel-analyze').onclick = function() {
+                layer.close(aiAnalyzeModalIndex);
+            };
+            
+            // 保存弹窗索引
+            var editModalIndex;
+            var aiAnalyzeModalIndex;
+            
+            // 打开编辑弹窗
+            function openEditModal(data) {
+                // 填充表单数据
+                document.getElementById('edit-id').value = data.id;
+                document.getElementById('edit-title').value = data.title;
+                document.getElementById('edit-source').value = data.source;
+                document.getElementById('edit-url').value = data.url;
+                document.getElementById('edit-image_url').value = data.image_url;
+                document.getElementById('edit-keyword').value = data.keyword;
+                
+                // 打开弹窗并保存索引
+                editModalIndex = layer.open({
+                    type: 1,
+                    title: '编辑数据',
+                    content: document.getElementById('edit-modal'),
+                    area: ['600px', '400px'],
+                    success: function(layero, index) {
+                        // 表单渲染
+                        form.render();
+                    }
+                });
+            }
+            
+            // 取消编辑
+            document.getElementById('cancel-edit').onclick = function() {
+                layer.close(editModalIndex);
+            };
+            
+            // 提交编辑表单
+            form.on('submit(edit-form)', function(data) {
+                layer.load(2);
+                
+                // 调用编辑接口
+                fetch({{ url_for('admin.edit_warehouse_data')|tojson }}, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data.field)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    layer.closeAll('loading');
+                    if (data.code === 0) {
+                        layer.msg('编辑成功', {icon: 1});
+                        // 关闭弹窗
+                        layer.close(editModalIndex);
+                        // 刷新表格
+                        tableIns.reload();
+                    } else {
+                        layer.msg(data.msg, {icon: 5});
+                    }
+                })
+                .catch(error => {
+                    layer.closeAll('loading');
+                    layer.msg('编辑失败：' + error.message, {icon: 5});
+                });
+                
+                return false;
+            });
+            
+            // 删除数据
+            function deleteData(ids) {
+                layer.confirm('确定要删除选中的数据吗？', {
+                    icon: 3,
+                    title: '确认删除'
+                }, function(index) {
+                    layer.load(2);
+                    
+                    // 调用删除接口
+                    fetch({{ url_for('admin.delete_warehouse_data')|tojson }}, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ids: ids})
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        layer.closeAll('loading');
+                        if (data.code === 0) {
+                            layer.msg(data.msg, {icon: 1});
+                            // 刷新表格
+                            tableIns.reload();
+                        } else {
+                            layer.msg(data.msg, {icon: 5});
+                        }
+                    })
+                    .catch(error => {
+                        layer.closeAll('loading');
+                        layer.msg('删除失败：' + error.message, {icon: 5});
+                    });
+                    
+                    layer.close(index);
+                });
+            }
+        });
+    </script>
+    
+    <!-- 操作按钮模板 -->
+    <script type="text/html" id="tool-bar">
+        <a class="layui-btn layui-btn-xs" lay-event="view">查看</a>
+        <a class="layui-btn layui-btn-xs layui-btn-normal" lay-event="edit">编辑</a>
+        <a class="layui-btn layui-btn-xs layui-btn-danger" lay-event="delete">删除</a>
+        <a class="layui-btn layui-btn-xs layui-btn-primary" lay-event="collect">详细采集</a>
+        <a class="layui-btn layui-btn-xs layui-btn-warm" lay-event="saveToDb">保存到数据库</a>
+        <a class="layui-btn layui-btn-xs layui-btn-info" lay-event="preview">预览内容</a>
+    </script>
+</body>
+</html>

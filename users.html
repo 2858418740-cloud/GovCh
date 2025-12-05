@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>用户管理 - 政企智能舆情分析平台</title>
+    <!-- 引入 layui CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='layui/css/layui.css') }}">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Microsoft YaHei', sans-serif;
+        }
+        .layui-layout-admin .layui-header {
+            background-color: #009688;
+        }
+        .layui-layout-admin .layui-side {
+            background-color: #393D49;
+        }
+        .layui-layout-admin .layui-body {
+            top: 60px;
+        }
+        .layui-logo {
+            color: #fff;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .admin-info {
+            color: #fff;
+            line-height: 60px;
+            margin-right: 20px;
+        }
+        .admin-info a {
+            color: #fff;
+            margin: 0 5px;
+        }
+        .admin-info a:hover {
+            text-decoration: underline;
+        }
+        .content-main {
+            padding: 20px;
+        }
+        .table-container {
+            background-color: #fff;
+            border-radius: 5px;
+            padding: 20px;
+            box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+        }
+        .table-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .table-header h3 {
+            margin: 0;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <!-- layui 布局容器 -->
+    <div class="layui-layout layui-layout-admin">
+        <!-- 头部区域 -->
+        <div class="layui-header">
+            <!-- 左侧logo -->
+            <div class="layui-logo">政企智能舆情分析平台</div>
+            <!-- 右侧用户信息 -->
+            <div class="layui-layout-right">
+                <div class="admin-info">
+                    <span>欢迎您，{{ current_user.username }}</span>
+                    <a href="{{ url_for('main.dashboard') }}">返回首页</a>
+                    <a href="{{ url_for('auth.logout') }}">退出登录</a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 左侧导航栏 -->
+        <div class="layui-side layui-bg-black">
+            <div class="layui-side-scroll">
+                <!-- 导航菜单 -->
+                <ul class="layui-nav layui-nav-tree" lay-filter="admin-nav">
+                    <li class="layui-nav-item layui-nav-itemed">
+                        <a href="javascript:;">后台管理</a>
+                        <dl class="layui-nav-child">
+                            <dd><a href="{{ url_for('admin.admin_dashboard') }}">仪表盘</a></dd>
+                            <dd class="layui-this"><a href="{{ url_for('admin.users') }}">用户管理</a></dd>
+                            <dd><a href="{{ url_for('admin.roles') }}">角色管理</a></dd>
+                            <dd><a href="{{ url_for('admin.scraping_tasks') }}">数据采集管理</a></dd>
+                            <dd><a href="{{ url_for('admin.scraping_rules') }}">采集规则库</a></dd>
+                            <dd><a href="{{ url_for('admin.data_warehouse') }}">数据仓库管理</a></dd>
+                            
+                            <dd><a href="{{ url_for('admin.settings') }}">系统设置</a></dd>
+                        </dl>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- 主内容区域 -->
+        <div class="layui-body">
+            <div class="content-main">
+                <div class="table-container">
+                    <div class="table-header">
+                        <h3>用户管理</h3>
+                        <button class="layui-btn layui-btn-normal" id="addUserBtn">添加用户</button>
+                    </div>
+                    
+                    <!-- 搜索和筛选 -->
+                    <div class="layui-form-item">
+                        <div class="layui-input-inline">
+                            <input type="text" name="search" placeholder="搜索用户名或邮箱" autocomplete="off" class="layui-input">
+                        </div>
+                        <div class="layui-input-inline">
+                            <select name="role">
+                                <option value="">所有角色</option>
+                                {% for role in roles %}
+                                <option value="{{ role.id }}">{{ role.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="layui-input-inline">
+                            <button class="layui-btn layui-btn-primary" id="searchBtn">搜索</button>
+                        </div>
+                    </div>
+                    
+                    <!-- 用户列表 -->
+                    <table class="layui-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>用户名</th>
+                                <th>邮箱</th>
+                                <th>角色</th>
+                                <th>创建时间</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for user in users %}
+                            <tr>
+                                <td>{{ user.id }}</td>
+                                <td>{{ user.username }}</td>
+                                <td>{{ user.email }}</td>
+                                <td>{{ user.role.name }}</td>
+                                <td>{{ user.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                                <td>
+                                    <button class="layui-btn layui-btn-xs layui-btn-edit" data-id="{{ user.id }}">编辑</button>
+                                    {% if user.id != current_user.id %}
+                                    <button class="layui-btn layui-btn-xs layui-btn-danger" data-id="{{ user.id }}">删除</button>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    
+                    <!-- 分页 -->
+                    <div class="layui-box layui-laypage layui-laypage-default" id="page"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 添加/编辑用户弹窗 -->
+    <div id="userForm" style="display: none;">
+        <form class="layui-form" lay-filter="userForm" id="userFormElem">
+            <input type="hidden" name="id">
+            <div class="layui-form-item">
+                <label class="layui-form-label">用户名</label>
+                <div class="layui-input-block">
+                    <input type="text" name="username" required lay-verify="required" placeholder="请输入用户名" autocomplete="off" class="layui-input">
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">邮箱</label>
+                <div class="layui-input-block">
+                    <input type="email" name="email" required lay-verify="required|email" placeholder="请输入邮箱" autocomplete="off" class="layui-input">
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">角色</label>
+                <div class="layui-input-block">
+                    <select name="role_id" required lay-verify="required">
+                        {% for role in roles %}
+                        <option value="{{ role.id }}">{{ role.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="layui-form-item" id="passwordDiv">
+                <label class="layui-form-label">密码</label>
+                <div class="layui-input-block">
+                    <input type="password" name="password" placeholder="请输入密码" autocomplete="off" class="layui-input">
+                </div>
+            </div>
+        </form>
+    </div>
+    
+    <!-- 引入 layui JS -->
+    <script src="{{ url_for('static', filename='layui/layui.js') }}"></script>
+    <script>
+        // 定义模板变量
+        var urls = {
+            add_user: {{ url_for('admin.add_user')|tojson }},
+            edit_user: {{ url_for('admin.edit_user', id=0)|tojson }},
+            delete_user: {{ url_for('admin.delete_user', id=0)|tojson }},
+            users: {{ url_for('admin.users')|tojson }}
+        };
+        
+        var totalUsers = Number('{{ total_users|default(0) }}');
+        var currentPage = Number('{{ current_page|default(1) }}');
+        
+        layui.use(['element', 'table', 'layer', 'form', 'laypage'], function() {
+            var element = layui.element;
+            var table = layui.table;
+            var layer = layui.layer;
+            var form = layui.form;
+            var laypage = layui.laypage;
+            
+            // 初始化导航
+            element.init();
+            
+            // 初始化分页
+            laypage.render({
+                elem: 'page',
+                count: totalUsers,
+                limit: 10,
+                curr: currentPage,
+                jump: function(obj, first) {
+                    if (!first) {
+                        // 分页跳转逻辑
+                        location.href = '?page=' + obj.curr;
+                    }
+                }
+            });
+            
+            // 添加用户按钮点击事件
+            document.getElementById('addUserBtn').onclick = function() {
+                form.val('userForm', {"id": ""});
+                document.getElementById('passwordDiv').style.display = 'block';
+                document.getElementById('userFormElem').action = urls.add_user;
+                document.getElementById('userFormElem').method = 'POST';
+                layer.open({
+                    type: 1,
+                    title: '添加用户',
+                    content: document.getElementById('userForm'),
+                    area: ['500px', '400px'],
+                    btn: ['保存', '取消'],
+                    yes: function(index, layero) {
+                        // 表单提交逻辑
+                        document.getElementById('userFormElem').submit();
+                    }
+                });
+            };
+            
+            // 编辑按钮点击事件
+            var editBtns = document.querySelectorAll('.layui-btn-edit');
+            editBtns.forEach(function(btn) {
+                btn.onclick = function() {
+                    var id = this.getAttribute('data-id');
+                    // 通过AJAX获取用户数据并填充表单
+                    var xhr = new XMLHttpRequest();
+                    xhr.open('GET', urls.users + '/edit/' + id, true);
+                    xhr.onreadystatechange = function() {
+                        if (xhr.readyState === 4 && xhr.status === 200) {
+                            var userData = JSON.parse(xhr.responseText);
+                            form.val('userForm', userData);
+                            document.getElementById('passwordDiv').style.display = 'none';
+                            document.getElementById('userFormElem').action = urls.edit_user.replace('0', id);
+                            document.getElementById('userFormElem').method = 'POST';
+                            layer.open({
+                                type: 1,
+                                title: '编辑用户',
+                                content: document.getElementById('userForm'),
+                                area: ['500px', '350px'],
+                                btn: ['保存', '取消'],
+                                yes: function(index, layero) {
+                                    // 表单提交逻辑
+                                    document.getElementById('userFormElem').submit();
+                                }
+                            });
+                        }
+                    };
+                    xhr.send();
+                };
+            });
+            
+            // 删除按钮点击事件
+            var deleteBtns = document.querySelectorAll('.layui-btn-danger');
+            deleteBtns.forEach(function(btn) {
+                btn.onclick = function() {
+                    var id = this.getAttribute('data-id');
+                    layer.confirm('确定要删除这个用户吗？', {
+                        btn: ['确定', '取消']
+                    }, function(index) {
+                        // 删除用户逻辑
+                        window.location.href = urls.delete_user.replace('0', id);
+                    });
+                };
+            });
+            
+            // 搜索功能实现
+            function performSearch() {
+                var searchInput = document.querySelector('input[name="search"]');
+                var roleSelect = document.querySelector('select[name="role"]');
+                var searchTerm = searchInput.value;
+                var roleId = roleSelect.value;
+                
+                // 构建搜索URL
+                var url = window.location.pathname + '?';
+                var params = [];
+                
+                if (searchTerm) {
+                    params.push('search=' + encodeURIComponent(searchTerm));
+                }
+                
+                if (roleId) {
+                    params.push('role=' + encodeURIComponent(roleId));
+                }
+                
+                // 保留当前页码
+                var currentPage = new URLSearchParams(window.location.search).get('page');
+                if (currentPage) {
+                    params.push('page=' + currentPage);
+                }
+                
+                url += params.join('&');
+                window.location.href = url;
+            }
+            
+            // 搜索按钮点击事件
+            document.getElementById('searchBtn').onclick = function() {
+                performSearch();
+            };
+            
+            // 搜索输入框回车事件
+            document.querySelector('input[name="search"]').onkeypress = function(e) {
+                if (e.key === 'Enter') {
+                    performSearch();
+                }
+            };
+            
+            // 表单验证
+            form.verify({
+                username: [/^[a-zA-Z0-9_]{4,20}$/, '用户名必须4-20位字母、数字或下划线'],
+                password: function(value) {
+                    if (value && value.length < 6) {
+                        return '密码长度不能少于6位';
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>
