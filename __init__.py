@@ -2,9 +2,14 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from flask_bcrypt import Bcrypt
+from flask_migrate import Migrate
+import os
 
 # 创建SQLAlchemy实例
 db = SQLAlchemy()
+
+# 创建Migrate实例
+migrate = Migrate()
 
 # 创建LoginManager实例
 login_manager = LoginManager()
@@ -17,7 +22,6 @@ bcrypt = Bcrypt()
 
 def create_app():
     # 创建Flask应用实例，指定模板和静态文件夹路径
-    import os
     app = Flask(__name__, 
                 template_folder=os.path.join(os.path.abspath(os.path.dirname(__file__)), '../templates'),
                 static_folder=os.path.join(os.path.abspath(os.path.dirname(__file__)), '../static'),
@@ -30,6 +34,7 @@ def create_app():
     db.init_app(app)
     login_manager.init_app(app)
     bcrypt.init_app(app)
+    migrate.init_app(app, db)
     
     # 注册蓝图
     from app.routes import main_bp

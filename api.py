@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, request, jsonify, current_app
 from flask_login import login_required
-from app.scraper import BaiduNewsScraper
+from app.scraper import BaiduNewsScraper, XinhuaNewsScraper
 import logging
 
 # 创建蓝图
@@ -12,11 +12,12 @@ logger = logging.getLogger(__name__)
 @api_bp.route('/api/scrape', methods=['GET'])
 def scrape_api():
     """
-    API端点：用于抓取百度新闻数据
+    API端点：用于抓取新闻数据
     
     参数：
         keyword: 搜索关键字
         page: 页码（可选，默认为1）
+        source: 数据源（可选，默认为baidu，可选择baidu或xinhua）
         
     返回：
         JSON格式的新闻数据列表
@@ -25,6 +26,7 @@ def scrape_api():
         # 获取请求参数
         keyword = request.args.get('keyword', '')
         page = int(request.args.get('page', 1))
+        source = request.args.get('source', 'baidu')
         
         # 验证参数
         if not keyword:
@@ -34,7 +36,10 @@ def scrape_api():
             page = 1
         
         # 创建抓取器实例
-        scraper = BaiduNewsScraper()
+        if source == 'xinhua':
+            scraper = XinhuaNewsScraper()
+        else:
+            scraper = BaiduNewsScraper()
         
         # 抓取新闻
         news_list = scraper.fetch_news(keyword, page)
@@ -65,19 +70,24 @@ def scrape_page():
     """
     news_list = []
     keyword = ''
+    source = 'baidu'
     page = 1
     error = None
     
     if request.method == 'POST':
         try:
             keyword = request.form.get('keyword', '')
+            source = request.form.get('source', 'baidu')
             page = int(request.form.get('page', 1))
             
             if not keyword:
                 error = '请输入搜索关键字'
             else:
                 # 创建抓取器实例
-                scraper = BaiduNewsScraper()
+                if source == 'xinhua':
+                    scraper = XinhuaNewsScraper()
+                else:
+                    scraper = BaiduNewsScraper()
                 
                 # 抓取新闻
                 news_list = scraper.fetch_news(keyword, page)
@@ -88,6 +98,7 @@ def scrape_page():
     
     return render_template('scrape.html', 
                            news_list=news_list, 
-                           keyword=keyword, 
+                           keyword=keyword,
+                           source=source,
                            page=page, 
                            error=error)

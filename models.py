@@ -98,7 +98,8 @@ class DeepCollection(db.Model):
 class DataCollection(db.Model):
     """数据采集结果模型"""
     id = db.Column(db.Integer, primary_key=True)
-    task_id = db.Column(db.Integer, db.ForeignKey('scraping_task.id'), nullable=False)
+    task_id = db.Column(db.Integer, db.ForeignKey('scraping_task.id'), nullable=True)  # 允许为空，因为手动采集时可能没有任务
+    keyword = db.Column(db.String(100), nullable=False)  # 搜索关键词
     title = db.Column(db.String(200), nullable=False)  # 新闻标题
     image_url = db.Column(db.String(255))  # 封面图片URL
     source = db.Column(db.String(100))  # 新闻来源
@@ -109,3 +110,32 @@ class DataCollection(db.Model):
     
     def __repr__(self):
         return f'<DataCollection {self.title[:50]}>'
+
+class ScrapingRule(db.Model):
+    """采集规则库模型"""
+    id = db.Column(db.Integer, primary_key=True)
+    site_name = db.Column(db.String(100), nullable=False)  # 站点名称
+    site_url = db.Column(db.String(255), nullable=False, unique=True)  # 站点URL
+    title_xpath = db.Column(db.Text, nullable=False)  # 标题的XPath
+    content_xpath = db.Column(db.Text, nullable=False)  # 详细内容的XPath
+    request_headers = db.Column(db.Text, nullable=True)  # Request Headers（JSON格式）
+    created_at = db.Column(db.DateTime, server_default=db.func.now())  # 创建时间
+    updated_at = db.Column(db.DateTime, server_default=db.func.now(), onupdate=db.func.now())  # 更新时间
+    
+    def __repr__(self):
+        return f'<ScrapingRule {self.site_name}>'
+
+class AIEngine(db.Model):
+    """AI引擎模型"""
+    id = db.Column(db.Integer, primary_key=True)
+    provider_name = db.Column(db.String(100), nullable=False)  # 服务商名称
+    api_url = db.Column(db.String(255), nullable=False)  # API地址
+    api_key = db.Column(db.String(255), nullable=False)  # API密钥
+    model_name = db.Column(db.String(100), nullable=False)  # 模型名称
+    description = db.Column(db.Text, nullable=True)  # 描述
+    is_active = db.Column(db.Boolean, default=True)  # 是否启用
+    created_at = db.Column(db.DateTime, server_default=db.func.now())  # 创建时间
+    updated_at = db.Column(db.DateTime, server_default=db.func.now(), onupdate=db.func.now())  # 更新时间
+    
+    def __repr__(self):
+        return f'<AIEngine {self.provider_name} - {self.model_name}>'
